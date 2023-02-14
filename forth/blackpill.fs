@@ -1,4 +1,4 @@
-\ Tue 14 Feb 02:53:02 UTC 2023
+\ Tue 14 Feb 03:05:29 UTC 2023
 
 \ PC13 is Black Pill LED - it is blue
 
@@ -29,9 +29,9 @@ VARIABLE speed
       1 drop
   loop loop loop loop ;
 
-: bdelay 300 delay ; ( -- ) \ was just 3
-: bdkdel 800 delay ; ( -- ) \ was just 8
-: ldelay 1222 delay ; ( -- ) \ was 122
+: bdelay 30 delay ; ( -- ) \ was just 3
+: bdkdel 80 delay ; ( -- ) \ was just 8
+: ldelay 122 delay ; ( -- ) \ was 122
 : finishmsg ." done." ; ( -- )
 
 : RCC 40023800 ; ( -- addr ) ( p. 65 )
@@ -97,7 +97,6 @@ VARIABLE speed
 : blinks ( n -- )
   depth 1 - 0<
   if exit then
-  1 - ( normalize )
   0 do
     led on
     bdelay
@@ -110,12 +109,11 @@ VARIABLE speed
   3 blinks 
   7 0 do bdkdel loop
   7 0 do bdkdel loop
-  led off 3 blinks ;
+  led off 3 blinks drop ;
 
 : nullemit 0 emit ;
 
 
-
-\ 14 Feb 2023 02:34z
+\ 14 Feb 2023 03:10z
 \ END.
 
