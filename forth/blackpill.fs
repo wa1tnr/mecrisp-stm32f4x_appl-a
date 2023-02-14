@@ -1,12 +1,12 @@
-\ Tue 14 Feb 18:14:02 UTC 2023
+\ Tue 14 Feb 19:09:57 UTC 2023
 
 \ PC13 is Black Pill LED - it is blue
 
+\ Pretty sure the LED circuit negates 'normal' logic.  TODO: verify
+
 ( hex )
 
-\ hex 1 \ the 1 guards against underflow?
-
-\ include lib.fs
+\ include lib.fs  \ no file include mechanism here, do manually during ascii upload
 
 : bdelay 30 delay ; ( -- ) \ was just 3
 : bdkdel 80 delay ; ( -- ) \ was just 8
