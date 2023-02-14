@@ -1,0 +1,726 @@
+Script started on 2023-02-14 19:15:39+00:00 [TERM="xterm" COLUMNS="105" LINES="27"]
+
+NOT CHECKED for ok responses all the way down as captured by this file. ;)
+
+Probably did so live, though (when the log was recorded).
+
+user@host: $ ./picocom-bpill.sh /dev/ttyUSB0
+
+NON-STANDARD escape char is the backslash, not the usual Control+A
+Control \, Control Q to quit
+Control \, Control S to send a file from the local directory
+picocom v3.1
+
+port is        : /dev/ttyUSB0
+flowcontrol    : none
+baudrate is    : 115200
+parity is      : none
+databits are   : 8
+stopbits are   : 1
+escape is      : C-|
+local echo is  : no
+noinit is      : no
+noreset is     : no
+hangup is      : no
+nolock is      : no
+send_cmd is    : ascii-xfr -sn -l 50 -c 5
+receive_cmd is : rz -vv -E
+imap is        : lfcrlf,
+omap is        : crlf,delbs,
+emap is        : crcrlf,delbs,
+logfile is     : none
+initstring     : none
+exit_after is  : not set
+exit is        : no
+
+Type [C-|] [C-h] to see available commands
+Terminal ready
+
+.s Stack: [0 ]  TOS: 2A  *>
+ ok.
+reset Mecrisp-Stellaris 2.6.3 for STM32F411 by Matthias Koch
+
+*** file: lib.fs
+$ ascii-xfr -sn -l 50 -c 5 lib.fs
+ASCII upload of "lib.fs"
+Line delay: 50 ms, character delay 5 ms
+
+\ Tue 14 Feb 19:10:10 UTC 2023  ok.
+  ok.
+hex 1 \ pad  ok.
+  ok.
+: <1?  ( n -- BOOL )  ok.
+  dup 1 - 0< if drop -1 exit then drop 0 ;  ok.
+  ok.
+\ 1 2 << ( gives '4' )  ok.
+  ok.
+: << ( n shifts -- shifted )  ok.
+  lshift ;  ok.
+  ok.
+\ 2^0 = 1 \ 2^1 = 2 \ 2^2 = 4  ok.
+  ok.
+: 2^ ( n -- 2^n )  ok.
+  dup <1?  0< if  ok.
+    drop 1 exit  ok.
+  then  ok.
+  1 swap << ;  ok.
+  ok.
+: delay ( n -- ) \ unspecified absolute time interval TODO: measure, specify  ok.
+  depth 1 - 0< if exit then  ok.
+  1 max \ 1 seems enough for a do .. loop  ok.
+  0 do 3 0 do 11 0 do 100 0 do  ok.
+      1 drop  ok.
+  loop loop loop loop ;  ok.
+  ok.
+\ 14 Feb 2023 19:10z  ok.
+\ END.  ok.
+
+*** exit status: 0 ***
+.s Stack: [1 ] 2A  TOS: 1  *>
+ ok.
+
+*** file: black.*** file: black^[[0K^[[15Cpill.fs
+$ ascii-xfr -sn -l 50 -c 5 blackpill.fs
+ASCII upload of "blackpill.fs"
+Line delay: 50 ms, character delay 5 ms
+
+\ Tue 14 Feb 19:09:57 UTC 2023  ok.
+  ok.
+\ PC13 is Black Pill LED - it is blue  ok.
+  ok.
+\ Pretty sure the LED circuit negates 'normal' logic.  TODO: verify  ok.
+  ok.
+( hex )  ok.
+  ok.
+\ include lib.fs  \ no file include mechanism here, do manually during ascii upload  ok.
+  ok.
+: bdelay 30 delay ; ( -- ) \ was just 3  ok.
+: bdkdel 80 delay ; ( -- ) \ was just 8  ok.
+: ldelay 122 delay ; ( -- ) \ was 122  ok.
+: finishmsg ." done." ; ( -- )  ok.
+  ok.
+: RCC 40023800 ; ( -- addr ) ( p. 65 )  ok.
+: RCC_AHB1ENR RCC 30 + ; ( -- addr ) ( 7.3.24 )  ok.
+: RCC_APB2ENR RCC 44 + ; ( -- addr ) ( table 34 p 266 )  ok.
+  ok.
+: GPIOCEN ( -- n ) 1 2 << ; ( gives '4' )  ok.
+( 6.3.10 p.180 Rev 18 datasheet)  ok.
+  ok.
+: RCC! ( -- )  ok.
+  RCC_AHB1ENR @  ok.
+  GPIOCEN or  ok.
+  RCC_AHB1ENR !  ok.
+;  ok.
+  ok.
+: GPIOC 40020800 ; ( -- addr )  ok.
+( 2.3 p.65 )  ok.
+  ok.
+: GPIOC_MODER GPIOC 0 + ; ( -- addr )  ok.
+( offset 0x00 8.4.1 p.281 )  ok.
+: GPIOC_MODER! ( n -- )  ok.
+  GPIOC_MODER @  ok.
+  or GPIOC_MODER ! ;  ok.
+  ok.
+( everything correct March 2021 above this line )  ok.
+  ok.
+: OUTPUT ( n -- )  ok.
+  ( 6 max F min ) \ was C not 6  ok.
+  C max E min \ D is PC13  ok.
+  2 * 1 swap << ( sets bit 26 for D 13 )  ok.
+  GPIOC_MODER! ;  ok.
+\ HEX ok  ok.
+\ D ok  ok.
+\ 2 * ok  ok.
+\ 1 SWAP ok  ok.
+\ LSHIFT ok  ok.
+\ .S  4000000  ok  ok.
+\ 2 BASE ! ok  ok.
+\ DUP . 100000000000000000000000000 ok  ok.
+\ 100000000000000000000000000 local  ok.
+  ok.
+\ 100 0000 0000 0000 0000 0000 0000 local  ok.
+  ok.
+: GPIOC_BSRR ( -- addr )  ok.
+  GPIOC 18 + ; ( 18 right for all GPIOx is addrs offset )  ok.
+  ok.
+: BSX 2^ ; ( n -- n )  ok.
+: BRX 10 + 2^ ; ( n -- n )  ok.
+  ok.
+: GPIOC_BSRR!  ( n -- )  ok.
+  GPIOC_BSRR ! ;  ok.
+  ok.
+( : led 6 ; ) \ PD6 convenience selection  ok.
+: led D ; \ PC13 onboard LED  ok.
+: led!  GPIOC_BSRR! ; ( n -- )  ok.
+  ok.
+: on BRX led! ; ( n -- )  ok.
+: off BSX led! ; ( n -- )  ok.
+  ok.
+: setupled ( -- )  ok.
+  RCC! led OUTPUT led off ;  ok.
+  ok.
+: blinks ( n -- )  ok.
+  depth 1 - 0<  ok.
+  if exit then  ok.
+  0 do  ok.
+    led on  ok.
+    bdelay  ok.
+    led off  ok.
+    bdkdel  ok.
+  loop ;  ok.
+  ok.
+: linit ( -- n )  ok.
+  FFFFFF9D setupled  ok.
+  3 blinks   ok.
+  7 0 do bdkdel loop  ok.
+  7 0 do bdkdel loop  ok.
+  led off 3 blinks drop ;  ok.
+  ok.
+: nullemit 0 emit ;  ok.
+  ok.
+\ 14 Feb 2023 18:14z  ok.
+\ END.  ok.
+  ok.
+
+*** exit status: 0 ***
+.s Stack: [1 ] 2A  TOS: 1  *>
+ ok.
+drop  ok.
+.s Stack: [0 ]  TOS: 2A  *>
+ ok.
+linit  ok.
+.s Stack: [0 ]  TOS: 2A  *>
+ ok.
+reset Mecrisp-Stellaris 2.6.3 for STM32F411 by Matthias Koch
+
+*** file: lib.fs
+$ ascii-xfr -sn -l 50 -c 5 lib.fs
+ASCII upload of "lib.fs"
+Line delay: 50 ms, character delay 5 ms
+
+\ Tue 14 Feb 19:10:10 UTC 2023  ok.
+  ok.
+hex 1 \ pad  ok.
+  ok.
+: <1?  ( n -- BOOL )  ok.
+  dup 1 - 0< if drop -1 exit then drop 0 ;  ok.
+  ok.
+\ 1 2 << ( gives '4' )  ok.
+  ok.
+: << ( n shifts -- shifted )  ok.
+  lshift ;  ok.
+  ok.
+\ 2^0 = 1 \ 2^1 = 2 \ 2^2 = 4  ok.
+  ok.
+: 2^ ( n -- 2^n )  ok.
+  dup <1?  0< if  ok.
+    drop 1 exit  ok.
+  then  ok.
+  1 swap << ;  ok.
+  ok.
+: delay ( n -- ) \ unspecified absolute time interval TODO: measure, specify  ok.
+  depth 1 - 0< if exit then  ok.
+  1 max \ 1 seems enough for a do .. loop  ok.
+  0 do 3 0 do 11 0 do 100 0 do  ok.
+      1 drop  ok.
+  loop loop loop loop ;  ok.
+  ok.
+\ 14 Feb 2023 19:10z  ok.
+\ END.  ok.
+
+*** exit status: 0 ***
+.s Stack: [1 ] 2A  TOS: 1  *>
+ ok.
+
+*** file: blackpill.fs
+$ ascii-xfr -sn -l 50 -c 5 blackpill.fs
+ASCII upload of "blackpill.fs"
+Line delay: 50 ms, character delay 5 ms
+
+\ Tue 14 Feb 19:09:57 UTC 2023  ok.
+  ok.
+\ PC13 is Black Pill LED - it is blue  ok.
+  ok.
+\ Pretty sure the LED circuit negates 'normal' logic.  TODO: verify  ok.
+  ok.
+( hex )  ok.
+  ok.
+\ include lib.fs  \ no file include mechanism here, do manually during ascii upload  ok.
+  ok.
+: bdelay 30 delay ; ( -- ) \ was just 3  ok.
+: bdkdel 80 delay ; ( -- ) \ was just 8  ok.
+: ldelay 122 delay ; ( -- ) \ was 122  ok.
+: finishmsg ." done." ; ( -- )  ok.
+  ok.
+: RCC 40023800 ; ( -- addr ) ( p. 65 )  ok.
+: RCC_AHB1ENR RCC 30 + ; ( -- addr ) ( 7.3.24 )  ok.
+: RCC_APB2ENR RCC 44 + ; ( -- addr ) ( table 34 p 266 )  ok.
+  ok.
+: GPIOCEN ( -- n ) 1 2 << ; ( gives '4' )  ok.
+( 6.3.10 p.180 Rev 18 datasheet)  ok.
+  ok.
+: RCC! ( -- )  ok.
+  RCC_AHB1ENR @  ok.
+  GPIOCEN or  ok.
+  RCC_AHB1ENR !  ok.
+;  ok.
+  ok.
+: GPIOC 40020800 ; ( -- addr )  ok.
+( 2.3 p.65 )  ok.
+  ok.
+: GPIOC_MODER GPIOC 0 + ; ( -- addr )  ok.
+( offset 0x00 8.4.1 p.281 )  ok.
+: GPIOC_MODER! ( n -- )  ok.
+  GPIOC_MODER @  ok.
+  or GPIOC_MODER ! ;  ok.
+  ok.
+( everything correct March 2021 above this line )  ok.
+  ok.
+: OUTPUT ( n -- )  ok.
+  ( 6 max F min ) \ was C not 6  ok.
+  C max E min \ D is PC13  ok.
+  2 * 1 swap << ( sets bit 26 for D 13 )  ok.
+  GPIOC_MODER! ;  ok.
+\ HEX ok  ok.
+\ D ok  ok.
+\ 2 * ok  ok.
+\ 1 SWAP ok  ok.
+\ LSHIFT ok  ok.
+\ .S  4000000  ok  ok.
+\ 2 BASE ! ok  ok.
+\ DUP . 100000000000000000000000000 ok  ok.
+\ 100000000000000000000000000 local  ok.
+  ok.
+\ 100 0000 0000 0000 0000 0000 0000 local  ok.
+  ok.
+: GPIOC_BSRR ( -- addr )  ok.
+  GPIOC 18 + ; ( 18 right for all GPIOx is addrs offset )  ok.
+  ok.
+: BSX 2^ ; ( n -- n )  ok.
+: BRX 10 + 2^ ; ( n -- n )  ok.
+  ok.
+: GPIOC_BSRR!  ( n -- )  ok.
+  GPIOC_BSRR ! ;  ok.
+  ok.
+( : led 6 ; ) \ PD6 convenience selection  ok.
+: led D ; \ PC13 onboard LED  ok.
+: led!  GPIOC_BSRR! ; ( n -- )  ok.
+  ok.
+: on BRX led! ; ( n -- )  ok.
+: off BSX led! ; ( n -- )  ok.
+  ok.
+: setupled ( -- )  ok.
+  RCC! led OUTPUT led off ;  ok.
+  ok.
+: blinks ( n -- )  ok.
+  depth 1 - 0<  ok.
+  if exit then  ok.
+  0 do  ok.
+    led on  ok.
+    bdelay  ok.
+    led off  ok.
+    bdkdel  ok.
+  loop ;  ok.
+  ok.
+: linit ( -- n )  ok.
+  FFFFFF9D setupled  ok.
+  3 blinks   ok.
+  7 0 do bdkdel loop  ok.
+  7 0 do bdkdel loop  ok.
+  led off 3 blinks drop ;  ok.
+  ok.
+: nullemit 0 emit ;  ok.
+  ok.
+\ 14 Feb 2023 18:14z  ok.
+\ END.  ok.
+  ok.
+
+*** exit status: 0 ***
+.s Stack: [1 ] 2A  TOS: 1  *>
+ ok.
+drop .s Stack: [0 ]  TOS: 2A  *>
+ ok.
+.s Stack: [0 ]  TOS: 2A  *>
+ ok.
+5 3 * . F  ok.
+decimal 5 3 * . 15  ok.
+.s Stack: [0 ]  TOS: 42  *>
+ ok.
+-99 dup 1 + dup 1 + cr cr .s cr cr 
+
+Stack: [3 ] 42 -99 -98  TOS: -97  *>
+
+
+ ok.
+linit  ok.
+.s Stack: [3 ] 42 -99 -98  TOS: -97  *>
+ ok.
+\ result: nothing wrong at all  ok.
+  ok.
+words 
+Address: 20000768 Link: 20000708 Flags: 00000000 Code: 20000778 Name: nullemit
+Address: 20000708 Link: 200006BC Flags: 00000000 Code: 20000714 Name: linit
+Address: 200006BC Link: 20000694 Flags: 00000000 Code: 200006CA Name: blinks
+Address: 20000694 Link: 2000067C Flags: 00000000 Code: 200006A4 Name: setupled
+Address: 2000067C Link: 20000664 Flags: 00000000 Code: 20000686 Name: off
+Address: 20000664 Link: 20000650 Flags: 00000000 Code: 2000066E Name: on
+Address: 20000650 Link: 2000063C Flags: 00000000 Code: 2000065C Name: led!
+Address: 2000063C Link: 2000061C Flags: 00000000 Code: 20000646 Name: led
+Address: 2000061C Link: 20000608 Flags: 00000000 Code: 2000062E Name: GPIOC_BSRR!
+Address: 20000608 Link: 200005F4 Flags: 00000000 Code: 20000612 Name: BRX
+Address: 200005F4 Link: 200005D8 Flags: 00000000 Code: 200005FE Name: BSX
+Address: 200005D8 Link: 20000590 Flags: 00000000 Code: 200005EA Name: GPIOC_BSRR
+Address: 20000590 Link: 20000564 Flags: 00000000 Code: 2000059E Name: OUTPUT
+Address: 20000564 Link: 20000548 Flags: 00000000 Code: 20000578 Name: GPIOC_MODER!
+Address: 20000548 Link: 2000052C Flags: 00000000 Code: 2000055A Name: GPIOC_MODER
+Address: 2000052C Link: 20000504 Flags: 00000000 Code: 20000538 Name: GPIOC
+Address: 20000504 Link: 200004E0 Flags: 00000000 Code: 20000510 Name: RCC!
+Address: 200004E0 Link: 200004C4 Flags: 00000000 Code: 200004EE Name: GPIOCEN
+Address: 200004C4 Link: 200004A8 Flags: 00000000 Code: 200004D6 Name: RCC_APB2ENR
+Address: 200004A8 Link: 2000048C Flags: 00000000 Code: 200004BA Name: RCC_AHB1ENR
+Address: 2000048C Link: 2000046C Flags: 00000000 Code: 20000496 Name: RCC
+Address: 2000046C Link: 2000044C Flags: 00000000 Code: 2000047C Name: finishmsg
+Address: 2000044C Link: 20000430 Flags: 00000000 Code: 2000045A Name: ldelay
+Address: 20000430 Link: 20000414 Flags: 00000000 Code: 2000043E Name: bdkdel
+Address: 20000414 Link: 200003A8 Flags: 00000000 Code: 20000422 Name: bdelay
+Address: 200003A8 Link: 20000370 Flags: 00000000 Code: 200003B4 Name: delay
+Address: 20000370 Link: 2000035C Flags: 00000000 Code: 2000037A Name: 2^
+Address: 2000035C Link: 2000032C Flags: 00000000 Code: 20000366 Name: <<
+Address: 2000032C Link: 00000188 Flags: 00000000 Code: 20000336 Name: <1?
+Address: 00000188 Link: 000001AE Flags: 0000FFFF Code: 000001AE Name: --- Mecrisp-Stellaris 2.6.3 ---
+Address: 000001AE Link: 000001C6 Flags: 00000042 Code: 000001BA Name: 2dup
+Address: 000001C6 Link: 000001D8 Flags: 00000062 Code: 000001D2 Name: 2drop
+Address: 000001D8 Link: 000001F6 Flags: 00000044 Code: 000001E4 Name: 2swap
+Address: 000001F6 Link: 0000020A Flags: 00000062 Code: 00000202 Name: 2nip
+Address: 0000020A Link: 00000224 Flags: 00000044 Code: 00000216 Name: 2over
+Address: 00000224 Link: 00000248 Flags: 00000044 Code: 00000230 Name: 2tuck
+Address: 00000248 Link: 0000026A Flags: 00000046 Code: 00000254 Name: 2rot
+Address: 0000026A Link: 0000028C Flags: 00000046 Code: 00000276 Name: 2-rot
+Address: 0000028C Link: 000002A0 Flags: 00000020 Code: 00000296 Name: 2>r
+Address: 000002A0 Link: 000002B8 Flags: 00000020 Code: 000002AA Name: 2r>
+Address: 000002B8 Link: 000002D0 Flags: 00000020 Code: 000002C2 Name: 2r@
+Address: 000002D0 Link: 000002E2 Flags: 00000020 Code: 000002DE Name: 2rdrop
+Address: 000002E2 Link: 000002FA Flags: 00000042 Code: 000002EC Name: d2/
+Address: 000002FA Link: 0000030E Flags: 00000062 Code: 00000304 Name: d2*
+Address: 0000030E Link: 00000328 Flags: 00000042 Code: 0000031A Name: dshr
+Address: 00000328 Link: 0000033E Flags: 00000062 Code: 00000334 Name: dshl
+Address: 0000033E Link: 00000350 Flags: 00000042 Code: 0000034A Name: dabs
+Address: 00000350 Link: 0000036E Flags: 00000042 Code: 0000035E Name: dnegate
+Address: 0000036E Link: 00000386 Flags: 00000064 Code: 00000378 Name: d-
+Address: 00000386 Link: 0000039C Flags: 00000064 Code: 00000390 Name: d+
+Address: 0000039C Link: 000003AE Flags: 00000061 Code: 000003A6 Name: s>d
+Address: 000003AE Link: 000003C2 Flags: 00000062 Code: 000003B8 Name: um*
+Address: 000003C2 Link: 000003D6 Flags: 00000062 Code: 000003CC Name: m*
+Address: 000003D6 Link: 00000414 Flags: 00000044 Code: 000003E0 Name: ud*
+Address: 00000414 Link: 000004A6 Flags: 00000044 Code: 00000420 Name: udm*
+Address: 000004A6 Link: 000004C8 Flags: 00000043 Code: 000004B0 Name: */
+Address: 000004C8 Link: 000004EA Flags: 00000043 Code: 000004D4 Name: */mod
+Address: 000004EA Link: 0000050C Flags: 00000043 Code: 000004F4 Name: u*/
+Address: 0000050C Link: 00000530 Flags: 00000043 Code: 0000051A Name: u*/mod
+Address: 00000530 Link: 00000550 Flags: 00000043 Code: 0000053E Name: um/mod
+Address: 00000550 Link: 0000056E Flags: 00000043 Code: 0000055C Name: m/mod
+Address: 0000056E Link: 000005C0 Flags: 00000044 Code: 0000057C Name: ud/mod
+Address: 000005C0 Link: 00000636 Flags: 00000044 Code: 000005CC Name: d/mod
+Address: 00000636 Link: 0000064C Flags: 00000044 Code: 00000640 Name: d/
+Address: 0000064C Link: 00000694 Flags: 00000044 Code: 00000656 Name: f*
+Address: 00000694 Link: 000006E0 Flags: 00000044 Code: 0000069E Name: f/
+Address: 000006E0 Link: 000006F4 Flags: 00000020 Code: 000006EA Name: 2!
+Address: 000006F4 Link: 00000708 Flags: 00000020 Code: 000006FE Name: 2@
+Address: 00000708 Link: 0000071C Flags: 00000044 Code: 00000712 Name: du<
+Address: 0000071C Link: 00000730 Flags: 00000044 Code: 00000726 Name: du>
+Address: 00000730 Link: 00000746 Flags: 00000044 Code: 0000073A Name: d<
+Address: 00000746 Link: 00000762 Flags: 00000044 Code: 00000750 Name: d>
+Address: 00000762 Link: 00000772 Flags: 00000062 Code: 0000076C Name: d0<
+Address: 00000772 Link: 00000786 Flags: 00000062 Code: 0000077C Name: d0=
+Address: 00000786 Link: 000007A0 Flags: 00000044 Code: 00000790 Name: d<>
+Address: 000007A0 Link: 000007B8 Flags: 00000044 Code: 000007AA Name: d=
+Address: 000007B8 Link: 000007CA Flags: 00000020 Code: 000007C2 Name: sp@
+Address: 000007CA Link: 000007DA Flags: 00000020 Code: 000007D4 Name: sp!
+Address: 000007DA Link: 000007EC Flags: 00000020 Code: 000007E4 Name: rp@
+Address: 000007EC Link: 000007FC Flags: 00000020 Code: 000007F6 Name: rp!
+Address: 000007FC Link: 0000080C Flags: 00000061 Code: 00000806 Name: dup
+Address: 0000080C Link: 0000081C Flags: 00000061 Code: 00000818 Name: drop
+Address: 0000081C Link: 00000832 Flags: 00000061 Code: 00000828 Name: ?dup
+Address: 00000832 Link: 00000846 Flags: 00000062 Code: 0000083E Name: swap
+Address: 00000846 Link: 00000854 Flags: 00000062 Code: 00000850 Name: nip
+Address: 00000854 Link: 00000868 Flags: 00000062 Code: 00000860 Name: over
+Address: 00000868 Link: 0000087E Flags: 00000062 Code: 00000874 Name: tuck
+Address: 0000087E Link: 00000894 Flags: 00000063 Code: 00000888 Name: rot
+Address: 00000894 Link: 000008AC Flags: 00000063 Code: 000008A0 Name: -rot
+Address: 000008AC Link: 000008BE Flags: 00000020 Code: 000008B8 Name: pick
+Address: 000008BE Link: 000008D6 Flags: 00000000 Code: 000008CA Name: depth
+Address: 000008D6 Link: 000008F2 Flags: 00000000 Code: 000008E4 Name: rdepth
+Address: 000008F2 Link: 00000902 Flags: 00000020 Code: 000008FC Name: >r
+Address: 00000902 Link: 00000914 Flags: 00000020 Code: 0000090C Name: r>
+Address: 00000914 Link: 00000926 Flags: 00000020 Code: 0000091E Name: r@
+Address: 00000926 Link: 00000936 Flags: 00000020 Code: 00000932 Name: rdrop
+Address: 00000936 Link: 0000094A Flags: 00000020 Code: 00000942 Name: rpick
+Address: 0000094A Link: 00000960 Flags: 0000006E Code: 00000954 Name: and
+Address: 00000960 Link: 00000978 Flags: 0000006E Code: 0000096A Name: bic
+Address: 00000978 Link: 0000098E Flags: 0000006E Code: 00000982 Name: or
+Address: 0000098E Link: 000009A4 Flags: 0000006E Code: 00000998 Name: xor
+Address: 000009A4 Link: 000009B2 Flags: 00000061 Code: 000009AE Name: not
+Address: 000009B2 Link: 000009C2 Flags: 00000061 Code: 000009BC Name: clz
+Address: 000009C2 Link: 000009D0 Flags: 00000061 Code: 000009CC Name: shr
+Address: 000009D0 Link: 000009DE Flags: 00000061 Code: 000009DA Name: shl
+Address: 000009DE Link: 000009EE Flags: 00000061 Code: 000009E8 Name: ror
+Address: 000009EE Link: 000009FE Flags: 00000061 Code: 000009F8 Name: rol
+Address: 000009FE Link: 00000A14 Flags: 00000062 Code: 00000A0C Name: rrotate
+Address: 00000A14 Link: 00000A2E Flags: 0000006C Code: 00000A22 Name: rshift
+Address: 00000A2E Link: 00000A48 Flags: 0000006C Code: 00000A3C Name: arshift
+Address: 00000A48 Link: 00000A62 Flags: 0000006C Code: 00000A56 Name: lshift
+Address: 00000A62 Link: 00000A72 Flags: 00000061 Code: 00000A6C Name: 0=
+Address: 00000A72 Link: 00000A84 Flags: 00000061 Code: 00000A7C Name: 0<>
+Address: 00000A84 Link: 00000A92 Flags: 00000061 Code: 00000A8E Name: 0<
+Address: 00000A92 Link: 00000AA8 Flags: 00000060 Code: 00000A9E Name: true
+Address: 00000AA8 Link: 00000ABC Flags: 00000060 Code: 00000AB4 Name: false
+Address: 00000ABC Link: 00000AD0 Flags: 00000042 Code: 00000AC6 Name: >=
+Address: 00000AD0 Link: 00000AE4 Flags: 00000042 Code: 00000ADA Name: <=
+Address: 00000AE4 Link: 00000AF6 Flags: 00000042 Code: 00000AEC Name: <
+Address: 00000AF6 Link: 00000B08 Flags: 00000042 Code: 00000AFE Name: >
+Address: 00000B08 Link: 00000B1C Flags: 00000062 Code: 00000B12 Name: u>=
+Address: 00000B1C Link: 00000B30 Flags: 00000062 Code: 00000B26 Name: u<=
+Address: 00000B30 Link: 00000B42 Flags: 00000062 Code: 00000B3A Name: u<
+Address: 00000B42 Link: 00000B54 Flags: 00000062 Code: 00000B4C Name: u>
+Address: 00000B54 Link: 00000B6A Flags: 0000006B Code: 00000B5E Name: <>
+Address: 00000B6A Link: 00000B7C Flags: 0000006B Code: 00000B72 Name: =
+Address: 00000B7C Link: 00000B90 Flags: 00000062 Code: 00000B86 Name: min
+Address: 00000B90 Link: 00000BA4 Flags: 00000062 Code: 00000B9A Name: max
+Address: 00000BA4 Link: 00000BBA Flags: 00000062 Code: 00000BB0 Name: umax
+Address: 00000BBA Link: 00000BD8 Flags: 00000062 Code: 00000BC6 Name: umin
+Address: 00000BD8 Link: 00000C16 Flags: 00000000 Code: 00000BE4 Name: move
+Address: 00000C16 Link: 00000C38 Flags: 00000000 Code: 00000C22 Name: fill
+Address: 00000C38 Link: 00000C44 Flags: 00000020 Code: 00000C40 Name: @
+Address: 00000C44 Link: 00000C5C Flags: 0000006D Code: 00000C4C Name: !
+Address: 00000C5C Link: 00000C82 Flags: 0000006D Code: 00000C66 Name: +!
+Address: 00000C82 Link: 00000C90 Flags: 00000020 Code: 00000C8C Name: h@
+Address: 00000C90 Link: 00000CAA Flags: 0000006D Code: 00000C9A Name: h!
+Address: 00000CAA Link: 00000CD0 Flags: 0000006D Code: 00000CB4 Name: h+!
+Address: 00000CD0 Link: 00000CDE Flags: 00000020 Code: 00000CDA Name: c@
+Address: 00000CDE Link: 00000CF8 Flags: 0000006D Code: 00000CE8 Name: c!
+Address: 00000CF8 Link: 00000D1E Flags: 0000006D Code: 00000D02 Name: c+!
+Address: 00000D1E Link: 00000D46 Flags: 0000006D Code: 00000D2A Name: bis!
+Address: 00000D46 Link: 00000D6E Flags: 0000006D Code: 00000D52 Name: bic!
+Address: 00000D6E Link: 00000D96 Flags: 0000006D Code: 00000D7A Name: xor!
+Address: 00000D96 Link: 00000E00 Flags: 00000068 Code: 00000DA2 Name: bit@
+Address: 00000E00 Link: 00000E28 Flags: 0000006D Code: 00000E0C Name: hbis!
+Address: 00000E28 Link: 00000E50 Flags: 0000006D Code: 00000E34 Name: hbic!
+Address: 00000E50 Link: 00000E78 Flags: 0000006D Code: 00000E5C Name: hxor!
+Address: 00000E78 Link: 00000E98 Flags: 00000068 Code: 00000E84 Name: hbit@
+Address: 00000E98 Link: 00000EC0 Flags: 0000006D Code: 00000EA4 Name: cbis!
+Address: 00000EC0 Link: 00000EE8 Flags: 0000006D Code: 00000ECC Name: cbic!
+Address: 00000EE8 Link: 00000F10 Flags: 0000006D Code: 00000EF4 Name: cxor!
+Address: 00000F10 Link: 00000F30 Flags: 00000068 Code: 00000F1C Name: cbit@
+Address: 00000F30 Link: 00000F40 Flags: 00000061 Code: 00000F3C Name: cell+
+Address: 00000F40 Link: 00000F50 Flags: 00000061 Code: 00000F4C Name: cells
+Address: 00000F50 Link: 00000FEE Flags: 00000000 Code: 00000F5E Name: hflash!
+Address: 00000FEE Link: 0000104E Flags: 00000000 Code: 00000FFC Name: cflash!
+Address: 0000104E Link: 000010C6 Flags: 00000000 Code: 00001066 Name: eraseflashsector
+Address: 000010C6 Link: 00001224 Flags: 00000000 Code: 000010D8 Name: eraseflash
+Address: 00001224 Link: 0000123A Flags: 00000069 Code: 0000122C Name: +
+Address: 0000123A Link: 00001250 Flags: 00000069 Code: 00001242 Name: -
+Address: 00001250 Link: 0000125E Flags: 00000061 Code: 0000125A Name: 1-
+Address: 0000125E Link: 0000126C Flags: 00000061 Code: 00001268 Name: 1+
+Address: 0000126C Link: 0000127A Flags: 00000061 Code: 00001276 Name: 2-
+Address: 0000127A Link: 00001288 Flags: 00000061 Code: 00001284 Name: 2+
+Address: 00001288 Link: 0000129A Flags: 00000061 Code: 00001296 Name: negate
+Address: 0000129A Link: 000012AC Flags: 00000061 Code: 000012A4 Name: abs
+Address: 000012AC Link: 000012CA Flags: 00000042 Code: 000012B8 Name: u/mod
+Address: 000012CA Link: 000012E8 Flags: 00000042 Code: 000012D6 Name: /mod
+Address: 000012E8 Link: 000012FC Flags: 00000042 Code: 000012F2 Name: mod
+Address: 000012FC Link: 0000130C Flags: 00000062 Code: 00001304 Name: /
+Address: 0000130C Link: 0000131C Flags: 0000006A Code: 00001314 Name: *
+Address: 0000131C Link: 0000132A Flags: 00000061 Code: 00001326 Name: 2*
+Address: 0000132A Link: 00001338 Flags: 00000061 Code: 00001334 Name: 2/
+Address: 00001338 Link: 0000134C Flags: 00000061 Code: 00001344 Name: even
+Address: 0000134C Link: 00001364 Flags: 00000081 Code: 00001358 Name: base
+Address: 00001364 Link: 0000137A Flags: 00000000 Code: 00001372 Name: binary
+Address: 0000137A Link: 00001390 Flags: 00000000 Code: 00001388 Name: decimal
+Address: 00001390 Link: 000013A2 Flags: 00000000 Code: 0000139A Name: hex
+Address: 000013A2 Link: 000013BE Flags: 00000081 Code: 000013B2 Name: hook-emit
+Address: 000013BE Link: 000013DA Flags: 00000081 Code: 000013CE Name: hook-key
+Address: 000013DA Link: 000013F8 Flags: 00000081 Code: 000013EC Name: hook-emit?
+Address: 000013F8 Link: 00001414 Flags: 00000081 Code: 00001408 Name: hook-key?
+Address: 00001414 Link: 00001432 Flags: 00000081 Code: 00001426 Name: hook-pause
+Address: 00001432 Link: 00001448 Flags: 00000000 Code: 0000143E Name: emit
+Address: 00001448 Link: 0000145C Flags: 00000000 Code: 00001452 Name: key
+Address: 0000145C Link: 0000146E Flags: 00000000 Code: 00001468 Name: emit?
+Address: 0000146E Link: 00001480 Flags: 00000000 Code: 0000147A Name: key?
+Address: 00001480 Link: 00001496 Flags: 00000000 Code: 0000148C Name: pause
+Address: 00001496 Link: 000014BC Flags: 00000000 Code: 000014A8 Name: serial-emit
+Address: 000014BC Link: 000014E4 Flags: 00000000 Code: 000014CE Name: serial-key
+Address: 000014E4 Link: 00001512 Flags: 00000000 Code: 000014F8 Name: serial-emit?
+Address: 00001512 Link: 000015B8 Flags: 00000000 Code: 00001524 Name: serial-key?
+Address: 000015B8 Link: 000015DC Flags: 00000000 Code: 000015C6 Name: cexpect
+Address: 000015DC Link: 00001652 Flags: 00000000 Code: 000015EA Name: accept
+Address: 00001652 Link: 00001664 Flags: 00000040 Code: 0000165C Name: tib
+Address: 00001664 Link: 0000167A Flags: 00000081 Code: 0000166E Name: >in
+Address: 0000167A Link: 000016A0 Flags: 00000082 Code: 00001690 Name: current-source
+Address: 000016A0 Link: 000016BC Flags: 00000000 Code: 000016B0 Name: setsource
+Address: 000016BC Link: 000016DA Flags: 00000000 Code: 000016CA Name: source
+Address: 000016DA Link: 00001714 Flags: 00000000 Code: 000016E6 Name: query
+Address: 00001714 Link: 0000175C Flags: 00000000 Code: 00001722 Name: compare
+Address: 0000175C Link: 00001770 Flags: 00000000 Code: 00001766 Name: cr
+Address: 00001770 Link: 00001782 Flags: 00000000 Code: 0000177A Name: bl
+Address: 00001782 Link: 00001796 Flags: 00000000 Code: 0000178E Name: space
+Address: 00001796 Link: 000017B6 Flags: 00000000 Code: 000017A4 Name: spaces
+Address: 000017B6 Link: 000017C6 Flags: 00000050 Code: 000017C4 Name: [char]
+Address: 000017C6 Link: 000017DE Flags: 00000000 Code: 000017D2 Name: char
+Address: 000017DE Link: 000017EE Flags: 00000050 Code: 000017E6 Name: (
+Address: 000017EE Link: 00001808 Flags: 00000050 Code: 000017F6 Name: \
+Address: 00001808 Link: 0000184C Flags: 00000030 Code: 00001812 Name: ."
+Address: 0000184C Link: 00001872 Flags: 00000030 Code: 00001856 Name: c"
+Address: 00001872 Link: 0000189C Flags: 00000030 Code: 0000187C Name: s"
+Address: 0000189C Link: 000018B4 Flags: 00000000 Code: 000018A8 Name: count
+Address: 000018B4 Link: 000018CC Flags: 00000000 Code: 000018C0 Name: ctype
+Address: 000018CC Link: 000018F4 Flags: 00000000 Code: 000018D8 Name: type
+Address: 000018F4 Link: 0000192E Flags: 00000000 Code: 00001900 Name: hex.
+Address: 0000192E Link: 0000193E Flags: 00000000 Code: 00001938 Name: h.s
+Address: 0000193E Link: 0000194E Flags: 00000000 Code: 00001948 Name: u.s
+Address: 0000194E Link: 000019F2 Flags: 00000000 Code: 00001958 Name: .s
+Address: 000019F2 Link: 00001A92 Flags: 00000000 Code: 000019FE Name: words
+Address: 00001A92 Link: 00001AE4 Flags: 00000000 Code: 00001AA0 Name: unused
+Address: 00001AE4 Link: 00001C48 Flags: 00000000 Code: 00001AF8 Name: 12bitencoding
+Address: 00001C48 Link: 00001CAE Flags: 00000000 Code: 00001C60 Name: registerliteral,
+Address: 00001CAE Link: 00001D0E Flags: 00000000 Code: 00001CBE Name: movwmovt,
+Address: 00001D0E Link: 00001D74 Flags: 00000000 Code: 00001D1A Name: call,
+Address: 00001D74 Link: 00001DAA Flags: 00000000 Code: 00001D84 Name: literal,
+Address: 00001DAA Link: 00001DCE Flags: 00000000 Code: 00001DB8 Name: create
+Address: 00001DCE Link: 00001E12 Flags: 00000020 Code: 00001DDA Name: does>
+Address: 00001E12 Link: 00001E4E Flags: 00000000 Code: 00001E20 Name: <builds
+Address: 00001E4E Link: 00001E5A Flags: 00000050 Code: 00001E58 Name: [']
+Address: 00001E5A Link: 00001E72 Flags: 00000000 Code: 00001E62 Name: '
+Address: 00001E72 Link: 00001EB0 Flags: 00000030 Code: 00001E82 Name: postpone
+Address: 00001EB0 Link: 00001F06 Flags: 00000000 Code: 00001EBE Name: inline,
+Address: 00001F06 Link: 00001F1C Flags: 00000000 Code: 00001F12 Name: ret,
+Address: 00001F1C Link: 00001F2A Flags: 00000030 Code: 00001F28 Name: exit
+Address: 00001F2A Link: 00001F42 Flags: 00000030 Code: 00001F38 Name: recurse
+Address: 00001F42 Link: 00001F5A Flags: 00000081 Code: 00001F4E Name: state
+Address: 00001F5A Link: 00001F6C Flags: 00000000 Code: 00001F62 Name: ]
+Address: 00001F6C Link: 00001F7C Flags: 00000010 Code: 00001F74 Name: [
+Address: 00001F7C Link: 00001FA0 Flags: 00000000 Code: 00001F84 Name: :
+Address: 00001FA0 Link: 00001FF2 Flags: 00000030 Code: 00001FA8 Name: ;
+Address: 00001FF2 Link: 00002006 Flags: 00000000 Code: 00002000 Name: execute
+Address: 00002006 Link: 0000201E Flags: 00000010 Code: 00002016 Name: immediate
+Address: 0000201E Link: 00002034 Flags: 00000050 Code: 0000202C Name: inline
+Address: 00002034 Link: 0000204E Flags: 00000010 Code: 00002046 Name: compileonly
+Address: 0000204E Link: 00002068 Flags: 00000050 Code: 00002060 Name: 0-foldable
+Address: 00002068 Link: 00002082 Flags: 00000050 Code: 0000207A Name: 1-foldable
+Address: 00002082 Link: 0000209C Flags: 00000050 Code: 00002094 Name: 2-foldable
+Address: 0000209C Link: 000020B6 Flags: 00000050 Code: 000020AE Name: 3-foldable
+Address: 000020B6 Link: 000020D0 Flags: 00000050 Code: 000020C8 Name: 4-foldable
+Address: 000020D0 Link: 000020EA Flags: 00000050 Code: 000020E2 Name: 5-foldable
+Address: 000020EA Link: 00002104 Flags: 00000050 Code: 000020FC Name: 6-foldable
+Address: 00002104 Link: 0000211E Flags: 00000050 Code: 00002116 Name: 7-foldable
+Address: 0000211E Link: 0000214E Flags: 00000000 Code: 0000212E Name: constant
+Address: 0000214E Link: 000021AC Flags: 00000000 Code: 0000215E Name: 2constant
+Address: 000021AC Link: 00002210 Flags: 00000000 Code: 000021BA Name: smudge
+Address: 00002210 Link: 00002258 Flags: 00000000 Code: 00002220 Name: setflags
+Address: 00002258 Link: 0000226E Flags: 00000041 Code: 00002266 Name: aligned
+Address: 0000226E Link: 00002290 Flags: 00000000 Code: 0000227C Name: halign
+Address: 00002290 Link: 000022BA Flags: 00000000 Code: 0000229C Name: align
+Address: 000022BA Link: 00002302 Flags: 00000000 Code: 000022C4 Name: c,
+Address: 00002302 Link: 0000233A Flags: 00000000 Code: 0000230C Name: h,
+Address: 0000233A Link: 00002354 Flags: 00000000 Code: 00002342 Name: ,
+Address: 00002354 Link: 00002366 Flags: 00000000 Code: 0000235E Name: ><,
+Address: 00002366 Link: 000023CE Flags: 00000000 Code: 00002374 Name: string,
+Address: 000023CE Link: 0000242C Flags: 00000000 Code: 000023DA Name: allot
+Address: 0000242C Link: 00002448 Flags: 00000081 Code: 0000243C Name: (latest)
+Address: 00002448 Link: 00002460 Flags: 00000081 Code: 00002454 Name: (dp)
+Address: 00002460 Link: 00002484 Flags: 00000000 Code: 00002470 Name: forgetram
+Address: 00002484 Link: 000024AC Flags: 00000000 Code: 00002498 Name: compiletoram?
+Address: 000024AC Link: 000024CE Flags: 00000000 Code: 000024C0 Name: compiletoram
+Address: 000024CE Link: 00002540 Flags: 00000000 Code: 000024E4 Name: compiletoflash
+Address: 00002540 Link: 0000255C Flags: 00000000 Code: 00002554 Name: addrinflash?
+Address: 0000255C Link: 000025B0 Flags: 00000000 Code: 0000256E Name: addrinram?
+Address: 000025B0 Link: 000026A6 Flags: 00000000 Code: 000025C0 Name: (create)
+Address: 000026A6 Link: 000026BE Flags: 00000000 Code: 000026B6 Name: variable
+Address: 000026BE Link: 000026D6 Flags: 00000000 Code: 000026CE Name: 2variable
+Address: 000026D6 Link: 00002748 Flags: 00000000 Code: 000026E6 Name: nvariable
+Address: 00002748 Link: 00002802 Flags: 00000000 Code: 00002756 Name: buffer:
+Address: 00002802 Link: 00002832 Flags: 00000000 Code: 00002818 Name: dictionarystart
+Address: 00002832 Link: 00002894 Flags: 00000000 Code: 00002848 Name: dictionarynext
+Address: 00002894 Link: 000028C6 Flags: 00000000 Code: 000028A6 Name: skipstring
+Address: 000028C6 Link: 00002964 Flags: 00000000 Code: 000028D2 Name: find
+Address: 00002964 Link: 000029C2 Flags: 00000000 Code: 00002972 Name: cjump,
+Address: 000029C2 Link: 000029FC Flags: 00000000 Code: 000029CE Name: jump,
+Address: 000029FC Link: 00002A12 Flags: 00000000 Code: 00002A08 Name: here
+Address: 00002A12 Link: 00002B06 Flags: 00000000 Code: 00002A26 Name: flashvar-here
+Address: 00002B06 Link: 00002B42 Flags: 00000030 Code: 00002B12 Name: then
+Address: 00002B42 Link: 00002B5E Flags: 00000030 Code: 00002B4E Name: else
+Address: 00002B5E Link: 00002B76 Flags: 00000030 Code: 00002B68 Name: if
+Address: 00002B76 Link: 00002B90 Flags: 00000030 Code: 00002B82 Name: ahead
+Address: 00002B90 Link: 00002BAA Flags: 00000030 Code: 00002B9E Name: repeat
+Address: 00002BAA Link: 00002BC2 Flags: 00000030 Code: 00002BB6 Name: while
+Address: 00002BC2 Link: 00002BD6 Flags: 00000030 Code: 00002BCE Name: until
+Address: 00002BD6 Link: 00002BEA Flags: 00000030 Code: 00002BE2 Name: again
+Address: 00002BEA Link: 00002C14 Flags: 00000030 Code: 00002BF6 Name: begin
+Address: 00002C14 Link: 00002C24 Flags: 00000020 Code: 00002C1C Name: k
+Address: 00002C24 Link: 00002C34 Flags: 00000020 Code: 00002C2C Name: j
+Address: 00002C34 Link: 00002C44 Flags: 00000020 Code: 00002C3C Name: i
+Address: 00002C44 Link: 00002C82 Flags: 00000030 Code: 00002C50 Name: leave
+Address: 00002C82 Link: 00002C94 Flags: 00000020 Code: 00002C90 Name: unloop
+Address: 00002C94 Link: 00002CCC Flags: 00000030 Code: 00002CA0 Name: +loop
+Address: 00002CCC Link: 00002D0E Flags: 00000030 Code: 00002CD8 Name: loop
+Address: 00002D0E Link: 00002D56 Flags: 00000078 Code: 00002D18 Name: do
+Address: 00002D56 Link: 00002DE8 Flags: 00000078 Code: 00002D60 Name: ?do
+Address: 00002DE8 Link: 00002E02 Flags: 00000030 Code: 00002DF4 Name: case
+Address: 00002E02 Link: 00002E18 Flags: 00000030 Code: 00002E0C Name: ?of
+Address: 00002E18 Link: 00002EB6 Flags: 00000078 Code: 00002E22 Name: of
+Address: 00002EB6 Link: 00002EEC Flags: 00000030 Code: 00002EC2 Name: endof
+Address: 00002EEC Link: 00002F36 Flags: 00000030 Code: 00002EFA Name: endcase
+Address: 00002F36 Link: 00002F4A Flags: 00000000 Code: 00002F42 Name: token
+Address: 00002F4A Link: 00002FC4 Flags: 00000000 Code: 00002F56 Name: parse
+Address: 00002FC4 Link: 00003002 Flags: 00000000 Code: 00002FD0 Name: digit
+Address: 00003002 Link: 0000310C Flags: 00000000 Code: 00003010 Name: number
+Address: 0000310C Link: 0000312E Flags: 00000000 Code: 0000311A Name: .digit
+Address: 0000312E Link: 00003164 Flags: 00000000 Code: 0000313A Name: hold
+Address: 00003164 Link: 00003184 Flags: 00000000 Code: 00003170 Name: hold<
+Address: 00003184 Link: 0000319C Flags: 00000000 Code: 00003190 Name: sign
+Address: 0000319C Link: 000031B0 Flags: 00000000 Code: 000031A6 Name: #>
+Address: 000031B0 Link: 000031C8 Flags: 00000000 Code: 000031BA Name: f#S
+Address: 000031C8 Link: 000031EA Flags: 00000000 Code: 000031D2 Name: f#
+Address: 000031EA Link: 00003206 Flags: 00000000 Code: 000031F4 Name: #S
+Address: 00003206 Link: 00003232 Flags: 00000000 Code: 0000320E Name: #
+Address: 00003232 Link: 00003244 Flags: 00000000 Code: 0000323C Name: <#
+Address: 00003244 Link: 00003256 Flags: 00000000 Code: 0000324E Name: f.
+Address: 00003256 Link: 000032A4 Flags: 00000000 Code: 00003260 Name: f.n
+Address: 000032A4 Link: 000032BA Flags: 00000000 Code: 000032AE Name: ud.
+Address: 000032BA Link: 000032EC Flags: 00000000 Code: 000032C4 Name: d.
+Address: 000032EC Link: 000032FE Flags: 00000000 Code: 000032F6 Name: u.
+Address: 000032FE Link: 00003318 Flags: 00000000 Code: 00003306 Name: .
+Address: 00003318 Link: 00003360 Flags: 00000000 Code: 00003328 Name: evaluate
+Address: 00003360 Link: 0000362C Flags: 00000000 Code: 00003370 Name: interpret
+Address: 0000362C Link: 00003648 Flags: 00000081 Code: 0000363C Name: hook-quit
+Address: 00003648 Link: 000036BC Flags: 00000000 Code: 00003654 Name: quit
+Address: 000036BC Link: 000036D6 Flags: 00000000 Code: 000036C8 Name: eint?
+Address: 000036D6 Link: 000036E6 Flags: 00000020 Code: 000036E2 Name: eint
+Address: 000036E6 Link: 000036F6 Flags: 00000020 Code: 000036F2 Name: dint
+Address: 000036F6 Link: 0000370C Flags: 00000020 Code: 00003702 Name: ipsr
+Address: 0000370C Link: 00003718 Flags: 00000000 Code: 00003716 Name: nop
+Address: 00003718 Link: 0000375A Flags: 00000000 Code: 00003728 Name: unhandled
+Address: 0000375A Link: 0000376C Flags: 00000000 Code: 00003766 Name: reset
+Address: 0000376C Link: 00003796 Flags: 00000081 Code: 0000377E Name: irq-systick
+Address: 00003796 Link: 000037BE Flags: 00000081 Code: 000037A6 Name: irq-fault
+Address: 000037BE Link: 000037EC Flags: 00000081 Code: 000037D4 Name: irq-collection
+Address: 000037EC Link: 00003814 Flags: 00000081 Code: 000037FC Name: irq-exti0
+Address: 00003814 Link: 0000383C Flags: 00000081 Code: 00003824 Name: irq-exti1
+Address: 0000383C Link: 00003864 Flags: 00000081 Code: 0000384C Name: irq-exti2
+Address: 00003864 Link: 0000388C Flags: 00000081 Code: 00003874 Name: irq-exti3
+Address: 0000388C Link: 000038B4 Flags: 00000081 Code: 0000389C Name: irq-exti4
+Address: 000038B4 Link: 000038DA Flags: 00000081 Code: 000038C2 Name: irq-adc
+Address: 000038DA Link: 00003902 Flags: 00000081 Code: 000038EA Name: irq-tim2
+Address: 00003902 Link: 0000392A Flags: 00000081 Code: 00003912 Name: irq-tim3
+Address: 0000392A Link: 00003952 Flags: 00000081 Code: 0000393A Name: irq-tim4
+Address: 00003952 Link: 00004000 Flags: 0000FFFF Code: 00003972 Name: --- Flash Dictionary ---
+ ok.
+  ok.
+
+Terminating...
+Skipping tty reset...
+Thanks for using picocom
+user@host: $ exit
+exit
+
+Script done on 2023-02-14 19:19:16+00:00 [COMMAND_EXIT_CODE="0"]
+END.
