@@ -1,33 +1,12 @@
-\ Tue 14 Feb 03:05:29 UTC 2023
+\ Tue 14 Feb 18:14:02 UTC 2023
 
 \ PC13 is Black Pill LED - it is blue
 
 ( hex )
 
-hex
+\ hex 1 \ the 1 guards against underflow?
 
-1
-VARIABLE speed
-55 speed c! \ speed c@ 
-
-: <1?  ( n -- BOOL )
-  dup 1 - 0< if drop -1 exit then drop 0 ;
-
-
-: << ( n shifts -- )
-  lshift ;
-
-: 2^ ( n -- )
-  dup <1?  0< if
-    drop 1 exit
-  then
-  1 swap << ;
-
-: delay ( n -- )
-  depth 1 - 0< if exit then
-  0 do 3 0 do 11 0 do 100 0 do
-      1 drop
-  loop loop loop loop ;
+\ include lib.fs
 
 : bdelay 30 delay ; ( -- ) \ was just 3
 : bdkdel 80 delay ; ( -- ) \ was just 8
@@ -113,7 +92,6 @@ VARIABLE speed
 
 : nullemit 0 emit ;
 
-
-\ 14 Feb 2023 03:10z
+\ 14 Feb 2023 18:14z
 \ END.
 
