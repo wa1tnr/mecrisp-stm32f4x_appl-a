@@ -1,4 +1,4 @@
-\ Tue 14 Feb 19:09:57 UTC 2023
+\ Tue 14 Feb 23:59:02 UTC 2023
 
 \ PC13 is Black Pill LED - it is blue
 
@@ -8,10 +8,10 @@
 
 \ include lib.fs  \ no file include mechanism here, do manually during ascii upload
 
-: bdelay 30 delay ; ( -- ) \ was just 3
-: bdkdel 80 delay ; ( -- ) \ was just 8
-: ldelay 122 delay ; ( -- ) \ was 122
-: finishmsg ." done." ; ( -- )
+decimal
+: bdelay 10 delay ; ( -- )
+: bdkdel 100 delay ; ( -- )
+hex
 
 : RCC 40023800 ; ( -- addr ) ( p. 65 )
 : RCC_AHB1ENR RCC 30 + ; ( -- addr ) ( 7.3.24 )
@@ -73,6 +73,7 @@
 : setupled ( -- )
   RCC! led OUTPUT led off ;
 
+
 : blinks ( n -- )
   depth 1 - 0<
   if exit then
@@ -81,6 +82,16 @@
     bdelay
     led off
     bdkdel
+  loop ;
+
+: calib_blinks ( n -- )
+  depth 1 - 0<
+  if exit then
+  0 do
+    led on
+     $A delay \ bdelay
+    led off
+     $A delay \ bdkdel
   loop ;
 
 : linit ( -- n )
@@ -92,6 +103,14 @@
 
 : nullemit 0 emit ;
 
-\ 14 Feb 2023 18:14z
+: go
+  FFFFFF9D setupled
+  6FFFFFFF \ 1879048191
+  blinks
+    begin
+        1 drop
+    again ;
+
+\ 14 Feb 2023 23:59z
 \ END.
 

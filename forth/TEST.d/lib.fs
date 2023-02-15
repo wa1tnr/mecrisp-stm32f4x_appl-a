@@ -1,4 +1,4 @@
-\ Tue 14 Feb 19:10:10 UTC 2023
+\ Tue 14 Feb 23:56:14 UTC 2023
 
 hex 1 \ pad
 
@@ -18,12 +18,17 @@ hex 1 \ pad
   then
   1 swap << ;
 
-: delay ( n -- ) \ unspecified absolute time interval TODO: measure, specify
-  depth 1 - 0< if exit then
-  1 max \ 1 seems enough for a do .. loop
-  0 do 3 0 do 11 0 do 100 0 do
-      1 drop
-  loop loop loop loop ;
+: _mdelay ( n -- ) \ milliseconds to delay - unit time
+  $A2D 0 do 1 drop loop
+;
 
-\ 14 Feb 2023 19:10z
+: delay ( n -- )
+  depth 1 - 0< if exit then
+  1 max
+  0 do
+    _mdelay
+  loop
+;
+
+\ 14 Feb 2023 23:56z
 \ END.
